@@ -1,0 +1,46 @@
+name: ajochale_app
+description: A bike ride booking Flutter application similar to Rapido.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.8.1 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Map and location services
+  google_maps_flutter: ^2.5.0
+  geolocator: ^10.0.0
+
+  # Networking
+  http: ^0.13.5
+
+  # State management
+  provider: ^6.0.5
+
+  # iOS style icons
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Assets (images, icons, etc.)
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
+
+  # Custom fonts (optional)
+  # fonts:
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: assets/fonts/Poppins-Regular.ttf
+  #       - asset: assets/fonts/Poppins-Bold.ttf
+  #         weight: 700
