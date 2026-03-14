@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'searching_rider_screen.dart';
 
 class RideConfirmScreen extends StatelessWidget {
 
@@ -79,15 +80,18 @@ class RideConfirmScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(15),
                 ),
+
                 onPressed: () {
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Searching for nearby rider..."),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SearchingRiderScreen(),
                     ),
                   );
 
                 },
+
                 child: const Text(
                   "Confirm Ride",
                   style: TextStyle(fontSize: 18),

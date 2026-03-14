@@ -264,14 +264,15 @@
 //     );
 //   }
 // }
-import 'package:ajochale_app/screens/ride_confirm_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
+import 'ride_confirm_screen.dart';
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -279,40 +280,41 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 
-  GoogleMapController? _mapController;
-  Position? _currentPosition;
+  GoogleMapController? mapController;
+  Position? currentPosition;
 
-  final LatLng _defaultLocation = const LatLng(31.3260, 75.5762);
+  final LatLng defaultLocation = const LatLng(31.3260, 75.5762);
 
-  final TextEditingController _destinationController = TextEditingController();
+  final TextEditingController destinationController = TextEditingController();
 
-  final Set<Marker> _markers = {};
-  final Set<Polyline> _polylines = {};
+  final Set<Marker> markers = {};
+  final Set<Polyline> polylines = {};
 
   final PolylinePoints polylinePoints = PolylinePoints();
 
   String googleApiKey = "YOUR_GOOGLE_MAPS_API_KEY";
 
-  double distanceKm = 0;
   double estimatedFare = 0;
+  double distanceKm = 0;
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    getCurrentLocation();
   }
 
   @override
   void dispose() {
-    _destinationController.dispose();
+    destinationController.dispose();
     super.dispose();
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
+  void onMapCreated(GoogleMapController controller) {
+    mapController = controller;
   }
 
-  Future<void> _getCurrentLocation() async {
+  /// GET USER LOCATION
+  Future<void> getCurrentLocation() async {
 
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return;
@@ -332,18 +334,20 @@ class _HomeScreenState extends State<HomeScreen> {
     LatLng userLocation = LatLng(position.latitude, position.longitude);
 
     setState(() {
-      _currentPosition = position;
 
-      _markers.add(
+      currentPosition = position;
+
+      markers.add(
         Marker(
           markerId: const MarkerId("pickup"),
           position: userLocation,
           infoWindow: const InfoWindow(title: "Pickup Location"),
         ),
       );
+
     });
 
-    _mapController?.animateCamera(
+    mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
           target: userLocation,
@@ -353,15 +357,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _drawRoute(LatLng destination) async {
+  /// DRAW ROUTE
+  Future<void> drawRoute(LatLng destination) async {
 
-    if (_currentPosition == null) return;
+    if (currentPosition == null) return;
 
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
       request: PolylineRequest(
         origin: PointLatLng(
-          _currentPosition!.latitude,
-          _currentPosition!.longitude,
+          currentPosition!.latitude,
+          currentPosition!.longitude,
         ),
         destination: PointLatLng(
           destination.latitude,
@@ -384,9 +389,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
 
-        _polylines.clear();
+        polylines.clear();
 
-        _polylines.add(
+        polylines.add(
           Polyline(
             polylineId: const PolylineId("route"),
             points: routePoints,
@@ -397,25 +402,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
       });
 
-      _calculateDistance(destination);
+      calculateDistance(destination);
     }
   }
 
-  void _calculateDistance(LatLng destination) {
+  /// CALCULATE DISTANCE
+  void calculateDistance(LatLng destination) {
 
     double distance = Geolocator.distanceBetween(
-      _currentPosition!.latitude,
-      _currentPosition!.longitude,
+      currentPosition!.latitude,
+      currentPosition!.longitude,
       destination.latitude,
       destination.longitude,
     );
 
     distanceKm = distance / 1000;
 
-    _calculateFare(distanceKm);
+    calculateFare(distanceKm);
   }
 
-  void _calculateFare(double distance) {
+  /// CALCULATE FARE
+  void calculateFare(double distance) {
 
     const double baseFare = 20;
     const double perKmRate = 8;
@@ -424,18 +431,20 @@ class _HomeScreenState extends State<HomeScreen> {
       estimatedFare = baseFare + (distance * perKmRate);
     });
   }
-void _bookRide() {
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => RideConfirmScreen(
-        fare: estimatedFare,
+  /// BOOK RIDE
+  void bookRide() {
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RideConfirmScreen(
+          fare: estimatedFare,
+        ),
       ),
-    ),
-  );
+    );
+  }
 
-}
   @override
   Widget build(BuildContext context) {
 
@@ -449,18 +458,18 @@ void _bookRide() {
 
           /// GOOGLE MAP
           GoogleMap(
-            onMapCreated: _onMapCreated,
+            onMapCreated: onMapCreated,
             initialCameraPosition: CameraPosition(
-              target: _defaultLocation,
+              target: defaultLocation,
               zoom: 14,
             ),
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
-            markers: _markers,
-            polylines: _polylines,
+            markers: markers,
+            polylines: polylines,
           ),
 
-          /// DESTINATION SEARCH
+          /// DESTINATION SEARCH BAR
           Positioned(
             top: 20,
             left: 15,
@@ -475,7 +484,7 @@ void _bookRide() {
                 ],
               ),
               child: TextField(
-                controller: _destinationController,
+                controller: destinationController,
                 decoration: const InputDecoration(
                   hintText: "Enter destination",
                   border: InputBorder.none,
@@ -483,10 +492,11 @@ void _bookRide() {
                 ),
                 onSubmitted: (value) {
 
-                  /// Example destination (demo)
+                  /// demo destination
                   LatLng destination = const LatLng(31.5204, 75.7200);
 
-                  _drawRoute(destination);
+                  drawRoute(destination);
+
                 },
               ),
             ),
@@ -526,7 +536,7 @@ void _bookRide() {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              onPressed: _bookRide,
+              onPressed: bookRide,
               child: const Text(
                 "Book Bike Ride",
                 style: TextStyle(fontSize: 18),
