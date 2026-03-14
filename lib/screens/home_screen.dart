@@ -11,10 +11,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 
-  late GoogleMapController mapController;
+  GoogleMapController? mapController;
   Position? currentPosition;
 
-  final LatLng initialPosition = const LatLng(31.3260, 75.5762);
+  Set<Marker> markers = {};
+
+  TextEditingController destinationController = TextEditingController();
+
+  final LatLng defaultLocation = const LatLng(31.3260, 75.5762);
 
   @override
   void initState() {
@@ -39,14 +43,24 @@ class _HomeScreenState extends State<HomeScreen> {
       desiredAccuracy: LocationAccuracy.high,
     );
 
+    LatLng userLocation = LatLng(position.latitude, position.longitude);
+
     setState(() {
       currentPosition = position;
+
+      markers.add(
+        Marker(
+          markerId: const MarkerId("pickup"),
+          position: userLocation,
+          infoWindow: const InfoWindow(title: "Pickup Location"),
+        ),
+      );
     });
 
-    mapController.animateCamera(
+    mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
-          target: LatLng(position.latitude, position.longitude),
+          target: userLocation,
           zoom: 15,
         ),
       ),
@@ -64,26 +78,66 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         children: [
 
+          /// GOOGLE MAP
           GoogleMap(
             onMapCreated: onMapCreated,
             initialCameraPosition: CameraPosition(
-              target: initialPosition,
+              target: defaultLocation,
               zoom: 14,
             ),
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
             mapType: MapType.normal,
+            markers: markers,
           ),
 
+          /// DESTINATION SEARCH BAR
+          Positioned(
+            top: 20,
+            left: 15,
+            right: 15,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black26, blurRadius: 5)
+                ],
+              ),
+              child: TextField(
+                controller: destinationController,
+                decoration: const InputDecoration(
+                  hintText: "Enter destination",
+                  border: InputBorder.none,
+                  icon: Icon(Icons.search),
+                ),
+              ),
+            ),
+          ),
+
+          /// BOOK RIDE BUTTON
           Positioned(
             bottom: 20,
             left: 20,
             right: 20,
             child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
               onPressed: () {
-                // future ride booking action
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Bike ride booking coming soon"),
+                  ),
+                );
+
               },
-              child: const Text("Book Bike Ride"),
+              child: const Text(
+                "Book Bike Ride",
+                style: TextStyle(fontSize: 18),
+              ),
             ),
           ),
 
