@@ -3,7 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -11,58 +11,77 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 
-  GoogleMapController? mapController;
-  Position? currentPosition;
+  GoogleMapController? _mapController;
+  Position? _currentPosition;
 
-  Set<Marker> markers = {};
+  final LatLng _defaultLocation = const LatLng(31.3260, 75.5762);
 
-  TextEditingController destinationController = TextEditingController();
+  final TextEditingController _destinationController = TextEditingController();
 
-  final LatLng defaultLocation = const LatLng(31.3260, 75.5762);
+  final Set<Marker> _markers = {};
+  final Set<Polyline> _polylines = {};
 
   @override
   void initState() {
     super.initState();
-    getCurrentLocation();
+    _getCurrentLocation();
   }
 
-  void onMapCreated(GoogleMapController controller) {
-    mapController = controller;
+  @override
+  void dispose() {
+    _destinationController.dispose();
+    super.dispose();
   }
 
-  Future<void> getCurrentLocation() async {
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+  }
 
-    LocationPermission permission = await Geolocator.requestPermission();
+  Future<void> _getCurrentLocation() async {
 
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return;
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
     }
+
+    if (permission == LocationPermission.deniedForever) return;
 
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    LatLng userLocation = LatLng(position.latitude, position.longitude);
+    LatLng userLatLng = LatLng(position.latitude, position.longitude);
 
     setState(() {
-      currentPosition = position;
+      _currentPosition = position;
 
-      markers.add(
+      _markers.add(
         Marker(
           markerId: const MarkerId("pickup"),
-          position: userLocation,
+          position: userLatLng,
           infoWindow: const InfoWindow(title: "Pickup Location"),
         ),
       );
     });
 
-    mapController?.animateCamera(
+    _mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
-          target: userLocation,
+          target: userLatLng,
           zoom: 15,
         ),
+      ),
+    );
+  }
+
+  void _bookRide() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Bike ride booking feature coming soon 🚲"),
       ),
     );
   }
@@ -80,33 +99,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
           /// GOOGLE MAP
           GoogleMap(
-            onMapCreated: onMapCreated,
+            onMapCreated: _onMapCreated,
             initialCameraPosition: CameraPosition(
-              target: defaultLocation,
+              target: _defaultLocation,
               zoom: 14,
             ),
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
             mapType: MapType.normal,
-            markers: markers,
+            markers: _markers,
+            polylines: _polylines,
           ),
 
-          /// DESTINATION SEARCH BAR
+          /// DESTINATION SEARCH BOX
           Positioned(
             top: 20,
             left: 15,
             right: 15,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: const [
-                  BoxShadow(color: Colors.black26, blurRadius: 5)
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 6,
+                  )
                 ],
               ),
               child: TextField(
-                controller: destinationController,
+                controller: _destinationController,
                 decoration: const InputDecoration(
                   hintText: "Enter destination",
                   border: InputBorder.none,
@@ -125,15 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              onPressed: () {
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Bike ride booking coming soon"),
-                  ),
-                );
-
-              },
+              onPressed: _bookRide,
               child: const Text(
                 "Book Bike Ride",
                 style: TextStyle(fontSize: 18),
